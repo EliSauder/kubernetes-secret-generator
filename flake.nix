@@ -88,6 +88,7 @@
             packages = [
               pkgs.go
               pkgs.operator-sdk-0_18_2
+              pkgs.kind
             ];
           };
       });
