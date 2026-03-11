@@ -18,7 +18,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/mittwald/kubernetes-secret-generator/pkg/apis/secretgenerator/v1alpha1"
-	"github.com/mittwald/kubernetes-secret-generator/pkg/controller/crd/stringsecret"
 	"github.com/mittwald/kubernetes-secret-generator/pkg/controller/crd/templatesecret"
 	"github.com/mittwald/kubernetes-secret-generator/pkg/controller/secret"
 )
@@ -97,13 +96,13 @@ func verifyTemplateSecretFromCR(t *testing.T, in *v1alpha1.TemplateSecret, out *
 		}
 
 		if len(val) != buf.Len() {
-			t.Errorf("field %q: secret length %d != expected length %d", k, len(val), buf.Len())
+			t.Errorf("field %q: secret length %d != expected length %d\nSecret: %q", k, len(val), buf.Len(), string(val))
 		}
 	}
 }
 
 func doReconcileTemplateSecretController(t *testing.T, templateSecret *v1alpha1.TemplateSecret, isErr bool) {
-	rec := stringsecret.NewReconciler(mgr)
+	rec := templatesecret.NewReconciler(mgr)
 	req := reconcile.Request{NamespacedName: types.NamespacedName{Name: templateSecret.Name, Namespace: templateSecret.Namespace}}
 
 	res, err := rec.Reconcile(req)
@@ -125,7 +124,7 @@ func TestControllerGenerateTemplateSecret(t *testing.T) {
 		{
 			"simple single field",
 			[]v1alpha1.TemplateField{
-				{FieldName: "test", Length: "10", Encoding: "raw"},
+				{FieldName: "test", Length: "10", Encoding: "ascii"},
 			},
 			map[string]string{
 				"test1": "hello {{ .test }}",
@@ -163,7 +162,7 @@ func TestControllerRegenerateTemplateSecret(t *testing.T) {
 		{
 			"simple single field",
 			[]v1alpha1.TemplateField{
-				{FieldName: "test", Length: "10", Encoding: "raw"},
+				{FieldName: "test", Length: "10", Encoding: "ascii"},
 			},
 			map[string]string{
 				"test1": "hello {{ .test }}",

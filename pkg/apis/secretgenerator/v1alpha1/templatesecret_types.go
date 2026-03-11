@@ -11,11 +11,9 @@ import (
 // StringSecretSpec defines the desired state of TemplateSecret
 type TemplateSecretSpec struct {
 	// +optional
-	Type string            `json:"type,omitempty"`
-	Data map[string]string `json:"data,omitempty"`
-	// +optional
-	ForceRegenerate bool            `json:"forceRegenerate,omitempty"`
-	Fields          []TemplateField `json:"fields"`
+	ForceRegenerate bool              `json:"forceRegenerate,omitempty"`
+	Data            map[string]string `json:"data,omitempty"`
+	Fields          []TemplateField   `json:"fields"`
 }
 
 type TemplateField struct {
@@ -50,7 +48,7 @@ type TemplateSecretList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&StringSecret{}, &StringSecretList{})
+	SchemeBuilder.Register(&TemplateSecret{}, &TemplateSecretList{})
 }
 
 func (in *TemplateSecretList) GetTypeMeta() metav1.TypeMeta {
@@ -74,7 +72,7 @@ func (in *TemplateSecret) GetStatus() SecretStatus {
 }
 
 func (in *TemplateSecret) GetType() string {
-	return in.Spec.Type
+	return "Opaque"
 }
 
 func (in *TemplateSecretStatus) GetSecret() *v1.ObjectReference {

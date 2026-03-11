@@ -141,7 +141,7 @@ func processTemplates(instance *v1alpha1.TemplateSecret) (map[string][]byte, err
 	fields := instance.Spec.Fields
 	data := instance.Spec.Data
 
-	genValues := make(map[string][]byte)
+	genValues := make(map[string]string)
 	// generate values from fields property
 	err := setValuesForFields(fields, true, genValues)
 	if err != nil {
@@ -170,7 +170,7 @@ func processTemplates(instance *v1alpha1.TemplateSecret) (map[string][]byte, err
 
 // setValuesForFields iterates over the given list of Fields and generates new random strings if the corresponding entry is empty or
 // regeneration is forced
-func setValuesForFields(fields []v1alpha1.TemplateField, regenerate bool, values map[string][]byte) error {
+func setValuesForFields(fields []v1alpha1.TemplateField, regenerate bool, values map[string]string) error {
 	// generate only empty fields if regenerate wasn't set to true
 	for _, field := range fields {
 		if string(values[field.FieldName]) == "" || regenerate {
@@ -181,14 +181,14 @@ func setValuesForFields(fields []v1alpha1.TemplateField, regenerate bool, values
 			}
 			encoding := field.Encoding
 			if encoding == "" {
-				encoding = secret.DefaultEncoding()
+				encoding = "ascii"
 			}
 			randomString, randErr := secret.GenerateRandomString(fieldLength, encoding, isByteLength)
 			if randErr != nil {
 				reqLogger.Error(randErr, "could not generate new random string")
 				return randErr
 			}
-			values[field.FieldName] = randomString
+			values[field.FieldName] = string(randomString)
 		}
 	}
 
