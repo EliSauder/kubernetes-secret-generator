@@ -59,8 +59,8 @@ func (pg StringGenerator) generateRandomSecret(conf secretConfig) error {
 }
 
 const (
-	NonWhiteSpacePrintableStart = 33
-	NonWhiteSpacePrintableEnd   = 126
+	PrintableStart = 32
+	PrintableEnd   = 126
 )
 
 // GenerateRandomString generates a random string of given length and with given encoding.
@@ -84,7 +84,7 @@ func GenerateRandomString(length int, encoding string, lenBytes bool) ([]byte, e
 		encodedString = hex.EncodeToString(b)
 	case "ascii":
 		for i, strByte := range b {
-			b[i] = NonWhiteSpacePrintableStart + strByte%(NonWhiteSpacePrintableEnd-NonWhiteSpacePrintableStart)
+			b[i] = PrintableStart + strByte%(PrintableEnd-PrintableStart)
 		}
 		encodedString = string(b)
 	default:
