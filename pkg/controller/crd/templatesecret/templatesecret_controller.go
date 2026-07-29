@@ -3,6 +3,7 @@ package templatesecret
 import (
 	"bytes"
 	"context"
+	"strings"
 	"text/template"
 	"time"
 
@@ -111,6 +112,16 @@ func (r *ReconcileTemplateSecret) updateSecret(ctx context.Context, instance *v1
 
 	// update data values from spec
 	crd.UpdateData(data, targetSecret, regenerate)
+
+	ann := map[string]string{}
+	for k, v := range instance.GetAnnotations() {
+		if strings.HasPrefix(k, secret.AnnotationPrefix) {
+			continue
+		}
+		ann[k] = v
+	}
+	targetSecret.Annotations = ann
+	targetSecret.Labels = instance.Labels
 
 	values, err := processTemplates(instance)
 	if err != nil {
