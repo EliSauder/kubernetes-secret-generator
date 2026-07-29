@@ -85,6 +85,15 @@ jobs:
       - name: Install operator-sdk
         run: sudo curl -L -o /usr/local/bin/operator-sdk "https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu" && sudo chmod +x /usr/local/bin/operator-sdk
 
+      - name: Set up QEMU (for multi-architecture support)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
       - name: Extract Docker metadata (Tags & Labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -100,6 +109,7 @@ jobs:
       - name: Build and Push Multi-Arch Docker Image
         uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           context: .
           file: ./build/Dockerfile
           # Define all target architectures here:
