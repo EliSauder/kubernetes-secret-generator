@@ -2,6 +2,7 @@ package crd
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -17,15 +18,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/mittwald/kubernetes-secret-generator/pkg/apis/secretgenerator/v1alpha1"
+	"github.com/mittwald/kubernetes-secret-generator/pkg/controller/secret"
 )
 
 // NewSecret creates an new Secret with given owner-info, type and data values
 func NewSecret(ownerCR metav1.Object, values map[string][]byte, secretType string) (*corev1.Secret, error) {
+	ann := map[string]string{}
+	for k, v := range ownerCR.GetAnnotations() {
+		if strings.HasPrefix(k, secret.AnnotationPrefix) {
+			continue
+		}
+		ann[k] = v
+	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ownerCR.GetName(),
-			Namespace: ownerCR.GetNamespace(),
-			Labels:    ownerCR.GetLabels(),
+			Name:        ownerCR.GetName(),
+			Namespace:   ownerCR.GetNamespace(),
+			Labels:      ownerCR.GetLabels(),
+			Annotations: ann,
 		},
 		Data: values,
 	}
