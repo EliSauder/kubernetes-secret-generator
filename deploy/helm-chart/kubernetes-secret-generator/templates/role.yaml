@@ -65,6 +65,8 @@ rules:
       - sshkeypairs/status
       - stringsecrets
       - stringsecrets/status
+      - templatesecrets
+      - templatesecrets/status
     verbs:
       - get
       - list
@@ -124,6 +126,8 @@ rules:
       - sshkeypairs/status
       - stringsecrets
       - stringsecrets/status
+      - templatesecrets
+      - templatesecrets/status
     verbs:
       - get
       - list
