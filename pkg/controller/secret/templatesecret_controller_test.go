@@ -153,6 +153,31 @@ func TestControllerGenerateTemplateSecret(t *testing.T) {
 	}
 }
 
+func TestControllerTemplateSecretNotRegeneratedOnReconcile(t *testing.T) {
+	ts := newTemplateSecretTestCR(
+		map[string]string{"config.env": "PASSWORD={{ .password }}"},
+		[]v1alpha1.TemplateField{{FieldName: "password", Length: "40", Encoding: "ascii"}},
+		false,
+	)
+
+	require.NoError(t, mgr.GetClient().Create(context.TODO(), ts))
+
+	doReconcileTemplateSecretController(t, ts, false)
+
+	key := client.ObjectKey{Name: ts.Name, Namespace: ts.Namespace}
+	before := &corev1.Secret{}
+	require.NoError(t, mgr.GetClient().Get(context.TODO(), key, before))
+
+	// A second reconcile (e.g. operator restart / leader change) must not rotate the generated value.
+	doReconcileTemplateSecretController(t, ts, false)
+
+	after := &corev1.Secret{}
+	require.NoError(t, mgr.GetClient().Get(context.TODO(), key, after))
+	require.Equal(t, string(before.Data["config.env"]), string(after.Data["config.env"]))
+
+	require.NoError(t, mgr.GetClient().Delete(context.TODO(), ts))
+}
+
 func TestControllerRegenerateTemplateSecret(t *testing.T) {
 	tests := []struct {
 		name   string
