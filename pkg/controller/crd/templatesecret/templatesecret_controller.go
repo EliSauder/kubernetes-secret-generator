@@ -104,15 +104,9 @@ func (r *ReconcileTemplateSecret) updateSecret(ctx context.Context, instance *v1
 		return reconcile.Result{}, nil
 	}
 
-	regenerate := instance.Spec.ForceRegenerate
-	data := instance.Spec.Data
-
 	targetSecret := existing.DeepCopy()
 
-	// update data values from spec
-	crd.UpdateData(data, targetSecret, regenerate)
-
-	values, err := processTemplates(instance)
+	values, err := mergeTemplateData(instance, targetSecret.Data)
 	if err != nil {
 		return reconcile.Result{RequeueAfter: time.Second * 30}, err
 	}
@@ -135,6 +129,41 @@ func (r *ReconcileTemplateSecret) createNewSecret(ctx context.Context, instance 
 	c := crd.Client{Client: r.client}
 
 	return c.ClientCreateSecret(ctx, values, instance, r.scheme)
+}
+
+// mergeTemplateData returns the data for an existing Secret. Rendered values are only written for keys that are
+// missing or empty, unless ForceRegenerate is set. Generated field values are not persisted separately, so
+// re-rendering an existing key would silently replace its embedded random values on every reconcile.
+func mergeTemplateData(instance *v1alpha1.TemplateSecret, existing map[string][]byte) (map[string][]byte, error) {
+	regenerate := instance.Spec.ForceRegenerate
+
+	merged := make(map[string][]byte, len(existing))
+	for key, value := range existing {
+		merged[key] = value
+	}
+
+	needsRender := regenerate
+	for key := range instance.Spec.Data {
+		if len(merged[key]) == 0 {
+			needsRender = true
+		}
+	}
+	if !needsRender {
+		return merged, nil
+	}
+
+	values, err := processTemplates(instance)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range values {
+		if regenerate || len(merged[key]) == 0 {
+			merged[key] = value
+		}
+	}
+
+	return merged, nil
 }
 
 func processTemplates(instance *v1alpha1.TemplateSecret) (map[string][]byte, error) {
